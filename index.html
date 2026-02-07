@@ -20,6 +20,7 @@
             --divider: rgba(255, 255, 255, 0.05);
             --radius: 12px;
             --shadow: 0 4px 12px rgba(0,0,0,0.3);
+            --warning: #ff9800;
         }
 
         body.light-mode {
@@ -148,6 +149,15 @@
             padding: 10px 18px; border-radius: 8px; cursor: pointer; font-size: 10px; font-weight: 700;
         }
 
+        .btn-warning {
+            border: 1px solid var(--warning) !important;
+            color: var(--warning) !important;
+        }
+
+        .btn-warning:hover {
+            background: rgba(255, 152, 0, 0.1);
+        }
+
         .theme-toggle {
             cursor: pointer; font-size: 18px; padding: 8px; border-radius: 50%;
             border: 1px solid var(--border); background: var(--bg);
@@ -244,6 +254,7 @@
                 <h2 id="checklist-titulo" style="margin: 0; font-size: 24px;"></h2>
                 <div style="display: flex; gap: 10px;">
                     <button class="btn-outline" onclick="toggleCompacto()">VISTA COMPACTA</button>
+                    <button class="btn-outline btn-warning" onclick="reiniciarProtocolo()">REINICIAR</button>
                     <button class="btn-outline" onclick="copiarResumo()">COPIAR</button>
                     <button class="btn" onclick="finalizarAtendimento()">FINALIZAR</button>
                 </div>
@@ -264,7 +275,6 @@
     let usuarioLogado = "";
     let checklistAtual = "";
 
-    // CONFIGURAÇÃO DOS CHECKLISTS
     const subAtivacao = ["Verificar documentação", "Verificar PESSOAS COMPLETO", "Abrir protocolo de atualização de plano no ERP", "Encaminhar para o FAT", "Gerar o contrato", "Encaminhar link de assinatura", "Abrir Renovação de Contrato no ERP", "Encerrar renovação"];
     
     const checklistStreaming = [
@@ -404,6 +414,16 @@
         if(input.checked) card.classList.add('checked');
         else card.classList.remove('checked');
         salvarTemp(); atualizarProgresso();
+    }
+
+    function reiniciarProtocolo() {
+        if (confirm("Tem certeza que deseja limpar todo o progresso deste protocolo?")) {
+            localStorage.removeItem(`sp_${usuarioLogado}_${checklistAtual}`);
+            abrirChecklist(checklistAtual);
+            const barra = document.getElementById("barra-progresso");
+            barra.style.filter = "brightness(1.5)";
+            setTimeout(() => barra.style.filter = "none", 300);
+        }
     }
 
     function atualizarProgresso() {
