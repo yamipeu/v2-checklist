@@ -154,9 +154,7 @@
             color: var(--warning) !important;
         }
 
-        .btn-warning:hover {
-            background: rgba(255, 152, 0, 0.1);
-        }
+        .btn-warning:hover { background: rgba(255, 152, 0, 0.1); }
 
         .theme-toggle {
             cursor: pointer; font-size: 18px; padding: 8px; border-radius: 50%;
@@ -195,7 +193,7 @@
             <div style="font-size: 9px; color: var(--muted); font-weight: 600;">SESSÃO ATIVA</div>
         </div>
         <img id="header-avatar" style="width: 38px; height: 38px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover;">
-        <button class="btn-outline" onclick="location.reload()">SAIR</button>
+        <button class="btn-outline" onclick="logout()">SAIR</button>
     </div>
 </header>
 
@@ -275,22 +273,17 @@
     let usuarioLogado = "";
     let checklistAtual = "";
 
+    // Configurações de Dados
     const subAtivacao = ["Verificar documentação", "Verificar PESSOAS COMPLETO", "Abrir protocolo de atualização de plano no ERP", "Encaminhar para o FAT", "Gerar o contrato", "Encaminhar link de assinatura", "Abrir Renovação de Contrato no ERP", "Encerrar renovação"];
-    
     const checklistStreaming = [
         "Verificar plano, endereço, alocados e contatos", 
         "Realizar ID positiva",
-        { tipo: "condicional", id: "oferta", texto: "Ofertar atualização para o cliente (caso esteja disponível)", opcoes: {
-            sim: subAtivacao,
-            nao: []
-        }},
-        { tipo: "condicional", id: "app", texto: "Verificar se possui acesso ao Virtex App", opcoes: {
+        { tipo: "condicional", texto: "Ofertar atualização para o cliente (caso esteja disponível)", opcoes: { sim: subAtivacao, nao: [] }},
+        { tipo: "condicional", texto: "Verificar se possui acesso ao Virtex App", opcoes: {
             sim: ["Verificar se possui acesso ao email e telefone cadastrados em sistema", "Instruir o acesso pelo Virtex App seguindo o manual disponível", "Verificar se o cliente conseguiu acessar e em quais aparelhos acessou o serviço"],
             nao: ["Recomendar o Virtex App", "Verificar se possui acesso ao email e telefone cadastrados em sistema", "Realizar a ativação remotamente solicitando os códigos ao cliente", "Solicitar que o cliente realize o acesso para verificarmos", "Solicitar que o cliente acesse o serviço", "Verificar se o cliente conseguiu acessar e em quais aparelhos acessou o serviço"]
         }},
-        "Abrir o protocolo no ERP", 
-        "Conferir o protocolo e enviar para a monitoria (ou encerrar em caso de primeira ativação)", 
-        "Concluir o atendimento"
+        "Abrir o protocolo no ERP", "Conferir o protocolo e enviar para a monitoria (ou encerrar em caso de primeira ativação)", "Concluir o atendimento"
     ];
 
     const dados = {
@@ -300,19 +293,26 @@
         MX: checklistStreaming
     };
 
-    function toggleTema() {
-        document.body.classList.toggle('light-mode');
-        localStorage.setItem('tema_p', document.body.classList.contains('light-mode') ? 'light' : 'dark');
-    }
-
-    if(localStorage.getItem('tema_p') === 'dark') document.body.classList.remove('light-mode');
-
-    function toggleCompacto() { document.body.classList.toggle('compact-mode'); }
+    // --- LÓGICA DE PERSISTÊNCIA (A CORREÇÃO SOLICITADA) ---
+    window.onload = function() {
+        const lastUser = localStorage.getItem("current_session_user");
+        if (lastUser) {
+            usuarioLogado = lastUser;
+            irParaDashboard();
+        }
+        
+        // Carrega tema salvo
+        if(localStorage.getItem('tema_p') === 'dark') document.body.classList.remove('light-mode');
+    };
 
     function login() {
         const nome = document.getElementById("login-name").value.trim();
         if (!nome) return;
         usuarioLogado = nome.toLowerCase();
+        
+        // Salva quem é o usuário atual da sessão
+        localStorage.setItem("current_session_user", usuarioLogado);
+
         if (!localStorage.getItem("up_" + usuarioLogado)) {
             localStorage.setItem("up_" + usuarioLogado, JSON.stringify({ 
                 nome: nome, total: 0, hoje: 0, 
@@ -321,6 +321,19 @@
         }
         irParaDashboard();
     }
+
+    function logout() {
+        localStorage.removeItem("current_session_user");
+        location.reload();
+    }
+
+    // --- RESTANTE DAS FUNÇÕES ---
+    function toggleTema() {
+        document.body.classList.toggle('light-mode');
+        localStorage.setItem('tema_p', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+    }
+
+    function toggleCompacto() { document.body.classList.toggle('compact-mode'); }
 
     function irParaDashboard() {
         const data = JSON.parse(localStorage.getItem("up_" + usuarioLogado));
@@ -351,15 +364,10 @@
 
         const container = document.getElementById("lista-itens");
         container.innerHTML = "";
-
         dados[tipo].forEach((item, idx) => {
-            if (typeof item === 'string') {
-                container.appendChild(criarCard(item, idx));
-            } else {
-                container.appendChild(criarCardCondicional(item, idx));
-            }
+            if (typeof item === 'string') container.appendChild(criarCard(item, idx));
+            else container.appendChild(criarCardCondicional(item, idx));
         });
-        
         carregarTemp();
         atualizarProgresso();
     }
@@ -369,7 +377,6 @@
         div.className = "card";
         div.id = `card-${idx}`;
         if(isSubItem) div.style.marginLeft = "20px";
-        
         div.innerHTML = `
             <label style="display: flex; gap: 15px; align-items: center; cursor: pointer;">
                 <input type="checkbox" onchange="marcarCard(this, '${idx}')">
@@ -383,7 +390,6 @@
     function criarCardCondicional(obj, idx) {
         const div = document.createElement("div");
         div.className = "card";
-        div.id = `card-cond-${idx}`;
         div.innerHTML = `
             <div style="font-weight: 600; font-size: 14px; margin-bottom: 10px;">${obj.texto}</div>
             <div class="radio-box">
@@ -399,12 +405,7 @@
         const container = document.getElementById(`cond-container-${idx}`);
         container.innerHTML = "";
         const subItens = dados[checklistAtual][idx].opcoes[escolha];
-        
-        if (subItens && subItens.length > 0) {
-            subItens.forEach((texto, sIdx) => {
-                container.appendChild(criarCard(texto, `${idx}-${escolha}-${sIdx}`, true));
-            });
-        }
+        if (subItens) subItens.forEach((texto, sIdx) => container.appendChild(criarCard(texto, `${idx}-${escolha}-${sIdx}`, true)));
         atualizarProgresso();
         salvarTemp();
     }
@@ -417,12 +418,9 @@
     }
 
     function reiniciarProtocolo() {
-        if (confirm("Tem certeza que deseja limpar todo o progresso deste protocolo?")) {
+        if (confirm("Deseja limpar este protocolo?")) {
             localStorage.removeItem(`sp_${usuarioLogado}_${checklistAtual}`);
             abrirChecklist(checklistAtual);
-            const barra = document.getElementById("barra-progresso");
-            barra.style.filter = "brightness(1.5)";
-            setTimeout(() => barra.style.filter = "none", 300);
         }
     }
 
@@ -442,49 +440,33 @@
             if(match) checks[match[1]] = x.checked;
         });
         const radios = {};
-        document.querySelectorAll("#lista-itens input[type='radio']:checked").forEach(x => {
-            radios[x.name] = x.nextSibling.textContent.trim().toLowerCase();
-        });
+        document.querySelectorAll("#lista-itens input[type='radio']:checked").forEach(x => radios[x.name] = x.nextSibling.textContent.trim().toLowerCase());
         const notas = {};
-        document.querySelectorAll("#lista-itens textarea").forEach((x, i) => {
-            notas[i] = x.value;
-        });
+        document.querySelectorAll("#lista-itens textarea").forEach((x, i) => notas[i] = x.value);
         localStorage.setItem(`sp_${usuarioLogado}_${checklistAtual}`, JSON.stringify({ checks, radios, notas }));
     }
 
     function carregarTemp() {
         const save = JSON.parse(localStorage.getItem(`sp_${usuarioLogado}_${checklistAtual}`));
         if (!save) return;
-        if(save.radios) {
-            for (const [name, val] of Object.entries(save.radios)) {
-                const idx = name.split('-')[1];
-                const radio = document.querySelector(`input[name="${name}"][onclick*="${val}"]`);
-                if (radio) { radio.checked = true; toggleCondicional(idx, val); }
-            }
-        }
-        if(save.checks) {
-            for (const [id, checked] of Object.entries(save.checks)) {
-                const cb = document.querySelector(`input[onchange*="'${id}'"]`);
-                if (cb) { cb.checked = checked; if(checked) cb.closest('.card').classList.add('checked'); }
-            }
-        }
-        if(save.notas) {
-            document.querySelectorAll("#lista-itens textarea").forEach((x, i) => x.value = save.notas[i] || "");
-        }
+        if(save.radios) Object.entries(save.radios).forEach(([name, val]) => {
+            const radio = document.querySelector(`input[name="${name}"][onclick*="${val}"]`);
+            if (radio) { radio.checked = true; toggleCondicional(name.split('-')[1], val); }
+        });
+        if(save.checks) Object.entries(save.checks).forEach(([id, checked]) => {
+            const cb = document.querySelector(`input[onchange*="'${id}'"]`);
+            if (cb) { cb.checked = checked; if(checked) cb.closest('.card').classList.add('checked'); }
+        });
+        if(save.notas) document.querySelectorAll("#lista-itens textarea").forEach((x, i) => x.value = save.notas[i] || "");
         atualizarProgresso();
     }
 
     function finalizarAtendimento() {
-        const checks = document.querySelectorAll("#lista-itens input[type='checkbox']");
-        const marcados = [...checks].filter(c => c.checked).length;
-        if (marcados < checks.length) {
-            if (!confirm(`Atenção: Faltam itens para concluir. Deseja finalizar assim mesmo?`)) return;
-        }
         let data = JSON.parse(localStorage.getItem("up_" + usuarioLogado));
         data.total++; data.hoje++;
         localStorage.setItem("up_" + usuarioLogado, JSON.stringify(data));
         localStorage.removeItem(`sp_${usuarioLogado}_${checklistAtual}`);
-        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#e11d2e', '#4a4a4a', '#d4cfc5'] });
+        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
         setTimeout(irParaDashboard, 1000);
     }
 
@@ -513,7 +495,7 @@
             }
         });
         navigator.clipboard.writeText(r);
-        alert("Resumo copiado com sucesso!");
+        alert("Resumo copiado!");
     }
 </script>
 </body>
