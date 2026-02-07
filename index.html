@@ -10,7 +10,6 @@
 
     <style>
         :root {
-            /* TEMA ESCURO */
             --primary: #e11d2e;
             --primary-soft: #ff4d5a;
             --bg: #0f1113;
@@ -23,7 +22,6 @@
             --shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
 
-        /* TEMA OFF-WHITE SUAVE (Warm Light Mode) */
         body.light-mode {
             --bg: #e5e1da; 
             --panel: #f1ede4; 
@@ -110,11 +108,6 @@
             position: relative;
         }
 
-        .card:hover {
-            transform: translateY(-4px) scale(1.01);
-            box-shadow: 0 12px 24px rgba(0,0,0,0.1);
-        }
-
         .card.checked { 
             opacity: 0.75; 
             background: rgba(0,0,0,0.02); 
@@ -148,9 +141,7 @@
         .btn {
             background: var(--primary); color: white; border: none; padding: 12px 24px;
             border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 11px;
-            box-shadow: 0 4px 10px rgba(225, 29, 46, 0.2);
         }
-        .btn:active { transform: scale(0.92); }
 
         .btn-outline {
             background: var(--bg); border: 1px solid var(--border); color: var(--text);
@@ -170,7 +161,7 @@
         }
 
         .conditional-group {
-            border-left: 2px dashed var(--primary); margin-left: 10px; padding-left: 20px; margin-top: 10px;
+            border-left: 2px dashed var(--primary); margin-left: 10px; padding-left: 20px; margin-top: 15px; margin-bottom: 15px;
         }
 
         @keyframes popIn {
@@ -273,31 +264,30 @@
     let usuarioLogado = "";
     let checklistAtual = "";
 
+    // CONFIGURAÇÃO DOS CHECKLISTS
+    const subAtivacao = ["Verificar documentação", "Verificar PESSOAS COMPLETO", "Abrir protocolo de atualização de plano no ERP", "Encaminhar para o FAT", "Gerar o contrato", "Encaminhar link de assinatura", "Abrir Renovação de Contrato no ERP", "Encerrar renovação"];
+    
+    const checklistStreaming = [
+        "Verificar plano, endereço, alocados e contatos", 
+        "Realizar ID positiva",
+        { tipo: "condicional", id: "oferta", texto: "Ofertar atualização para o cliente (caso esteja disponível)", opcoes: {
+            sim: subAtivacao,
+            nao: []
+        }},
+        { tipo: "condicional", id: "app", texto: "Verificar se possui acesso ao Virtex App", opcoes: {
+            sim: ["Verificar se possui acesso ao email e telefone cadastrados em sistema", "Instruir o acesso pelo Virtex App seguindo o manual disponível", "Verificar se o cliente conseguiu acessar e em quais aparelhos acessou o serviço"],
+            nao: ["Recomendar o Virtex App", "Verificar se possui acesso ao email e telefone cadastrados em sistema", "Realizar a ativação remotamente solicitando os códigos ao cliente", "Solicitar que o cliente realize o acesso para verificarmos", "Solicitar que o cliente acesse o serviço", "Verificar se o cliente conseguiu acessar e em quais aparelhos acessou o serviço"]
+        }},
+        "Abrir o protocolo no ERP", 
+        "Conferir o protocolo e enviar para a monitoria (ou encerrar em caso de primeira ativação)", 
+        "Concluir o atendimento"
+    ];
+
     const dados = {
         ME: ["Informar taxa/isenção e SLA", "Verificar financeiro", "Verificar documentação", "Informações novo endereço", "Abrir ME no ERP", "Abrir Atualização se isento", "Encaminhar para FAT", "Gerar contrato", "Abrir Renovação após assinatura", "Encerrar Renovação", "Encaminhar para CS"],
         PL: ["Verificar atualização disponível", "Verificar financeiro", "Verificar documentação", "Informar renovação da fidelidade", "Abrir Atualização de Plano", "Encaminhar para FAT", "Enviar vídeo para assinatura", "Gerar contrato", "Abrir Renovação após assinatura", "Encerrar Renovação"],
-        DZ: [
-            "Verificar plano, endereço, alocados e contatos", 
-            "Realizar ID positiva", 
-            { tipo: "condicional", texto: "Verificar se possui acesso ao Virtex App", opcoes: {
-                sim: ["Verificar se possui acesso ao email e telefone cadastrados em sistema", "Instruir o acesso pelo Virtex App seguindo o manual disponível", "Verificar se o cliente conseguiu acessar e em quais aparelhos acessou o serviço"],
-                nao: ["Recomendar o Virtex App", "Verificar se possui acesso ao email e telefone cadastrados em sistema", "Realizar a ativação remotamente solicitando os códigos ao cliente", "Solicitar que o cliente realize o acesso para verificarmos", "Solicitar que o cliente acesse o serviço", "Verificar se o cliente conseguiu acessar e em quais aparelhos acessou o serviço"]
-            }},
-            "Abrir o protocolo no ERP", 
-            "Conferir o protocolo e enviar para a monitoria (ou encerrar em caso de primeira ativação)", 
-            "Concluir o atendimento"
-        ],
-        MX: [
-            "Verificar plano, endereço, alocados e contatos", 
-            "Realizar ID positiva", 
-            { tipo: "condicional", texto: "Verificar se possui acesso ao Virtex App", opcoes: {
-                sim: ["Verificar se possui acesso ao email e telefone cadastrados em sistema", "Instruir o acesso pelo Virtex App seguindo o manual disponível", "Verificar se o cliente conseguiu acessar e em quais aparelhos acessou o serviço"],
-                nao: ["Recomendar o Virtex App", "Verificar se possui acesso ao email e telefone cadastrados em sistema", "Realizar a ativação remotamente solicitando os códigos ao cliente", "Solicitar que o cliente realize o acesso para verificarmos", "Solicitar que o cliente acesse o serviço", "Verificar se o cliente conseguiu acessar e em quais aparelhos acessou o serviço"]
-            }},
-            "Abrir o protocolo no ERP", 
-            "Conferir o protocolo e enviar para a monitoria (ou encerrar em caso de primeira ativação)", 
-            "Concluir o atendimento"
-        ]
+        DZ: checklistStreaming,
+        MX: checklistStreaming
     };
 
     function toggleTema() {
@@ -346,12 +336,7 @@
         document.getElementById("view-app").classList.add("active");
         document.getElementById("btn-" + tipo).classList.add("active");
         
-        const titulos = { 
-            ME: "Mudança de Endereço", 
-            PL: "Atualização de Plano", 
-            DZ: "Ativação/Reativação Deezer",
-            MX: "Ativação/Reativação Max"
-        };
+        const titulos = { ME: "Mudança de Endereço", PL: "Atualização de Plano", DZ: "Ativação/Reativação Deezer", MX: "Ativação/Reativação Max" };
         document.getElementById("checklist-titulo").innerText = titulos[tipo];
 
         const container = document.getElementById("lista-itens");
@@ -365,8 +350,8 @@
             }
         });
         
-        atualizarProgresso();
         carregarTemp();
+        atualizarProgresso();
     }
 
     function criarCard(texto, idx, isSubItem = false) {
@@ -405,20 +390,19 @@
         container.innerHTML = "";
         const subItens = dados[checklistAtual][idx].opcoes[escolha];
         
-        subItens.forEach((texto, sIdx) => {
-            container.appendChild(criarCard(texto, `${idx}-${escolha}-${sIdx}`, true));
-        });
+        if (subItens && subItens.length > 0) {
+            subItens.forEach((texto, sIdx) => {
+                container.appendChild(criarCard(texto, `${idx}-${escolha}-${sIdx}`, true));
+            });
+        }
         atualizarProgresso();
         salvarTemp();
     }
 
     function marcarCard(input, idx) {
         const card = input.closest('.card');
-        if(input.checked) {
-            card.classList.add('checked');
-        } else {
-            card.classList.remove('checked');
-        }
+        if(input.checked) card.classList.add('checked');
+        else card.classList.remove('checked');
         salvarTemp(); atualizarProgresso();
     }
 
@@ -437,68 +421,49 @@
             const match = x.onchange.toString().match(/'(.*?)'/);
             if(match) checks[match[1]] = x.checked;
         });
-
         const radios = {};
         document.querySelectorAll("#lista-itens input[type='radio']:checked").forEach(x => {
             radios[x.name] = x.nextSibling.textContent.trim().toLowerCase();
         });
-
         const notas = {};
         document.querySelectorAll("#lista-itens textarea").forEach((x, i) => {
             notas[i] = x.value;
         });
-
         localStorage.setItem(`sp_${usuarioLogado}_${checklistAtual}`, JSON.stringify({ checks, radios, notas }));
     }
 
     function carregarTemp() {
         const save = JSON.parse(localStorage.getItem(`sp_${usuarioLogado}_${checklistAtual}`));
         if (!save) return;
-
-        // Restaurar Radios primeiro para gerar os campos
         if(save.radios) {
             for (const [name, val] of Object.entries(save.radios)) {
                 const idx = name.split('-')[1];
                 const radio = document.querySelector(`input[name="${name}"][onclick*="${val}"]`);
-                if (radio) {
-                    radio.checked = true;
-                    toggleCondicional(idx, val);
-                }
+                if (radio) { radio.checked = true; toggleCondicional(idx, val); }
             }
         }
-
-        // Restaurar Checkboxes
         if(save.checks) {
             for (const [id, checked] of Object.entries(save.checks)) {
                 const cb = document.querySelector(`input[onchange*="'${id}'"]`);
-                if (cb) {
-                    cb.checked = checked;
-                    if(checked) cb.closest('.card').classList.add('checked');
-                }
+                if (cb) { cb.checked = checked; if(checked) cb.closest('.card').classList.add('checked'); }
             }
         }
-
-        // Restaurar Notas
         if(save.notas) {
             document.querySelectorAll("#lista-itens textarea").forEach((x, i) => x.value = save.notas[i] || "");
         }
-        
         atualizarProgresso();
     }
 
     function finalizarAtendimento() {
         const checks = document.querySelectorAll("#lista-itens input[type='checkbox']");
         const marcados = [...checks].filter(c => c.checked).length;
-        
         if (marcados < checks.length) {
             if (!confirm(`Atenção: Faltam itens para concluir. Deseja finalizar assim mesmo?`)) return;
         }
-
         let data = JSON.parse(localStorage.getItem("up_" + usuarioLogado));
         data.total++; data.hoje++;
         localStorage.setItem("up_" + usuarioLogado, JSON.stringify(data));
         localStorage.removeItem(`sp_${usuarioLogado}_${checklistAtual}`);
-        
         confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#e11d2e', '#4a4a4a', '#d4cfc5'] });
         setTimeout(irParaDashboard, 1000);
     }
